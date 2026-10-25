@@ -1,0 +1,31 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/ 
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Node.js / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Build and cache files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Generated outputs (uncomment if you don't want to track them)
+# output.csv
