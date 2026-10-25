@@ -1,159 +1,629 @@
-# HackerRank Orchestrate - October 2026
+# GhostTrace AI
+## Ghost Data Still Exists — Data Deletion Verification and Evidence Orchestration
 
-## Ghost Data Still Exists
-
-Build an AI agent that audits whether a user's personal data was actually deleted.
-
-A deletion workflow may report **Complete** while data still exists in databases, logs, support attachments, exports, search indexes, archives, or backups. Sync and restore processes may also bring deleted data back.
-
-For each request, the agent must first determine whether deletion was actually requested. It then returns `COMPLETE`, `INCOMPLETE`, or `NOT_APPLICABLE`, reports any remaining data or recreation risk, and produces the ordered remediation and verification steps required to finish an authorized deletion safely.
-
-Read [`problem_statement.md`](./problem_statement.md) for the complete challenge contract.
+**Project Name:** GhostTrace AI  
+**Challenge:** Ghost Data Still Exists  
+**Project Type:** Data deletion verification and evidence analysis  
+**Primary Language:** Python  
+**Expected Input Cases:** 518 deletion-request cases  
+**Primary Output:** `output.csv`
 
 ---
 
-## Quick Start
+## 1. Project Overview
 
-Clone the repository and move into the project directory:
+**GhostTrace AI** is a data deletion verification project designed to assess whether deletion requests have been completed, remain incomplete, or are not applicable based on available evidence.
 
-```bash
-git clone https://github.com/interviewstreet/hackerrank-orchestrate-october26.git
-cd hackerrank-orchestrate-october26
-```
+Deleting a record from one database does not necessarily mean that every copy has been removed. Data may persist in replicas, caches, logs, backups, downstream services, identity mappings, or other storage systems. These residual copies are commonly described as *ghost data*.
 
-Start your AI coding tool from the **repository root** so it automatically reads [`AGENTS.md`](./AGENTS.md) and logs your session turns to `log.txt` in the root directory.
+GhostTrace AI processes deletion-request cases and their supporting evidence to produce a structured, case-by-case assessment. Each result contains a deletion status and a JSON-formatted list of findings, verification details, or follow-up actions.
 
-Build your solution in `code/main.py`, or use another language and document its setup and run command clearly in your README.
+The project aims to make deletion verification more systematic, traceable, and reproducible while avoiding unsupported conclusions when the evidence is insufficient.
 
-Your solution must:
+## 2. Problem Statement
 
-- Read the input files from `dataset/`
-- Generate one prediction row for every request in `dataset/deletion_requests.csv`
-- Write the final predictions to `output.csv` in the repository root
+Organizations must be able to demonstrate that data deletion requests have been handled appropriately. A successful deletion workflow may require more than issuing a delete command. It can involve identifying the correct subject, locating associated records, checking relevant storage systems, validating deletion events, and determining whether the available evidence supports completion.
 
-Run the starter Python entry point with:
+GhostTrace AI addresses the following challenges:
 
-```bash
-python3 code/main.py
-```
+- **Identity resolution:** Connecting a deletion request to the correct user or account using available identifiers.
+- **Evidence correlation:** Relating logs, identity mappings, service events, and other artifacts to the same request.
+- **Deletion verification:** Distinguishing evidence of a deletion attempt from evidence that deletion was completed.
+- **Incomplete evidence:** Avoiding false claims of successful deletion when required checks are missing or inconclusive.
+- **Structured reporting:** Producing a consistent CSV result for all input cases.
+- **Auditability:** Preserving case identifiers and machine-readable findings so results can be reviewed and tested.
 
-The blank template at `dataset/output.csv` is provided as a reference. Your final generated file for submission must be the root-level `output.csv`.
+## 3. Project Objectives
 
+The primary objectives of GhostTrace AI are to:
 
-## Dataset
+1. Process each deletion-request case in the supplied dataset.
+2. Analyze the available evidence relevant to each case.
+3. Assign one of the permitted deletion statuses.
+4. Record evidence-based findings and appropriate follow-up actions.
+5. Serialize case steps as valid JSON arrays.
+6. Generate a root-level `output.csv` with the required schema.
+7. Support repeatable execution and validation of the generated output.
+8. Provide supporting documentation and tests for evaluation.
+9. Help reviewers identify cases where additional verification is required.
 
-All participant-facing files are in `dataset/`:
+## 4. Deletion Status Definitions
 
-| File | Contents |
-| --- | --- |
-| `deletion_requests.csv` | 518 requests |
-| `sample_deletion_requests.csv` | 32 sample requests |
-| `sample_output.csv` | Correct sample answers |
-| `user_identities.csv` | Current user identities |
-| `user_audit_log.csv` | Historical identity changes |
-| `system_activity.csv` | Activity across services and data processes |
-| `deletion_rules.csv` | Required treatment for each data category |
-| `evidence_files.csv` | Manifest of supplied evidence files |
-| `output.csv` | Blank output template |
+Every case must use one of the following status values.
 
-Evidence is stored under `dataset/evidence/` and may include PDFs, images, logs, JSON, plain text, or SQL snapshot exports. SQL captures may contain a primary database, regional replicas, a reporting replica, or a failover replica so replication drift can be investigated directly. The `.sql` files are readable as text and executable with SQLite.
+| Status | Meaning |
+|---|---|
+| `COMPLETE` | The available evidence supports that the applicable deletion requirements have been completed and adequately verified. |
+| `INCOMPLETE` | Deletion is pending, evidence is insufficient, a relevant system has not been verified, or a required action remains unresolved. |
+| `NOT_APPLICABLE` | The deletion workflow does not apply to the case, based on the available case information and evidence. |
 
-Only `deletion_requests.csv` requires answers. The other files provide evidence and context.
+### Classification Principles
 
----
+GhostTrace AI should follow these evidence-handling principles:
 
-## Output
+- A deletion request or deletion command alone does not prove that all relevant data has been removed.
+- A successful event in one system does not automatically prove deletion in every relevant system.
+- Missing evidence must not be treated as proof of successful deletion.
+- Identity matches should be based on available evidence, not assumptions.
+- `NOT_APPLICABLE` should be used only when the evidence supports that classification.
+- When the evidence cannot establish completion, the result should reflect that uncertainty.
+- Findings should distinguish verified facts from missing checks and recommended follow-up actions.
 
-Create `output.csv` with these columns in this exact order:
+These principles describe the intended interpretation of the statuses. Actual classification behavior depends on the implementation and its evaluation results.
+
+## 5. Input Data and Evidence
+
+GhostTrace AI is intended to operate on the deletion-request dataset supplied with the challenge.
+
+The original dataset contains deletion requests and supporting evidence. Depending on the case, this evidence may include identity mappings, service events, logs, deletion records, and verification artifacts.
+
+The dataset directory is expected to be named:
 
 ```text
+dataset/
+```
+
+The exact filenames and subdirectory layout must be taken from the supplied dataset and project instructions.
+
+### Evidence Processing Workflow
+
+For each case, the solution should:
+
+1. Read the deletion request and its identifiers.
+2. Locate evidence associated with the request.
+3. Correlate records using reliable identifiers where possible.
+4. Determine which deletion requirements are supported by the evidence.
+5. Identify unresolved checks or missing evidence.
+6. Assign a status consistent with the findings.
+7. Record the findings in the required output format.
+
+The assessment should not claim that a system was checked or a remediation was performed unless that claim is supported by the evidence and actual execution.
+
+The original dataset is an input to the analysis and should not be included in the final code archive when prohibited by the challenge instructions.
+
+## 6. Output Specification
+
+The primary generated artifact is:
+
+```text
+output.csv
+```
+
+It must be written to the project root and contain the following columns in the specified order:
+
+```csv
 case_id,deletion_status,steps_json
 ```
 
-Produce exactly one row per request. `deletion_status` is `COMPLETE`, `INCOMPLETE`, or `NOT_APPLICABLE`. `steps_json` is an ordered JSON array containing findings, remediation actions, and verification checks. Use an empty array (`[]`) for `NOT_APPLICABLE`. Evidence references may be a `file_id`, `activity_id`, or `audit_id`. Determine the resource state at `audit_at` from the available evidence; reported workflow statuses and operation results are claims. Use `dataset/sample_output.csv` as the format reference.
+### Column Descriptions
 
-The final file must contain 518 data rows sorted by `case_id` (plus the header row). The grader parses `steps_json` as JSON, so object-key order and whitespace do not matter; array order does. Order findings, remediation, and verification in that phase order. Within a phase, follow the operation order in the problem statement, then sort by `system_id` and `resource_id`.
+| Column | Description |
+|---|---|
+| `case_id` | Unique identifier for the deletion-request case. |
+| `deletion_status` | One of `COMPLETE`, `INCOMPLETE`, or `NOT_APPLICABLE`. |
+| `steps_json` | A valid JSON array containing structured findings, verification details, and/or follow-up steps. |
 
----
+### Illustrative Output Example
 
-## Evaluation
+The following example demonstrates the required structure. It is not a result for an actual dataset case.
 
-`output.csv` will be compared with hidden canonical answers. Scoring considers:
+```csv
+case_id,deletion_status,steps_json
+case_example,INCOMPLETE,"[{""step"":""verification"",""finding"":""Required deletion evidence is unavailable"",""action"":""Verify the relevant storage system""}]"
+```
 
-- deletion assessment accuracy;
-- current and historical identity resolution;
-- discovery of remaining data and recreation risks;
-- correct policy application and evidence references; and
-- completeness and ordering of remediation and verification steps.
+The JSON array is stored inside a CSV field. Double quotes inside that field must be escaped according to CSV rules.
 
-Your `code.zip` must include:
+### Output Requirements
+
+The generated file should:
+
+- Include the required header exactly.
+- Contain one result for every input case.
+- Preserve case identifiers.
+- Use only the permitted status values.
+- Store valid JSON arrays in `steps_json`.
+- Sort rows by `case_id` if required by the challenge specification.
+- Avoid duplicate or missing cases.
+- Be a real CSV file rather than an HTML page or renamed error response.
+
+For the expected dataset of 518 cases, validate that the file contains 518 data rows in addition to the header.
+
+## 7. Repository Structure
+
+The repository may contain the following components, depending on the project version:
+
+```text
+GhostTrace-AI/
+├── README.md
+├── AGENTS.md
+├── agent_trace_instructions.md
+├── problem_statement.md
+├── package.json
+├── vite.config.ts
+├── server.ts
+├── src/
+│   └── ... frontend application files ...
+├── backend/
+│   └── ... backend application files and tests ...
+├── code/
+│   ├── main.py
+│   ├── __init__.py
+│   └── evaluation/
+│       ├── evaluation_report.md
+│       └── usage_report.md
+├── dataset/
+│   └── ... input data and supporting evidence ...
+├── output.csv
+└── log.txt
+```
+
+This is a reference structure, not a verified inventory of every file in the current working copy.
+
+### Important Files
+
+- `README.md` — project overview, setup, execution, and submission instructions.
+- `AGENTS.md` — repository-specific development or execution instructions.
+- `agent_trace_instructions.md` — task-specific agent guidance.
+- `problem_statement.md` — original challenge definition.
+- `code/main.py` — Python processing entry point, if configured as the main processor.
+- `code/evaluation/evaluation_report.md` — evaluation findings and actual test results.
+- `code/evaluation/usage_report.md` — execution and usage documentation.
+- `backend/` — backend service and tests, where included.
+- `src/` — frontend application source, where included.
+- `dataset/` — source data and evidence; normally excluded from the code archive.
+- `output.csv` — generated result, submitted separately when required.
+- `log.txt` — authentic development or agent transcript, submitted separately when required.
+
+## 8. Requirements
+
+### Python
+
+Python is required to run the processing script.
+
+Check the installed version:
+
+```powershell
+python --version
+```
+
+If Python is unavailable, install it and ensure it is accessible from PowerShell.
+
+### Frontend and Backend
+
+If you intend to run the dashboard or API, install the dependencies specified by the project configuration files.
+
+For a Node.js-based frontend, check:
+
+```powershell
+node --version
+npm --version
+```
+
+Use the package manager and commands documented by the actual repository. Not every project copy necessarily contains the same scripts or backend configuration.
+
+## 9. Installation and Setup
+
+### Step 1: Open the Project Directory
+
+Navigate to the directory containing `README.md` and the `code/` folder.
+
+For example:
+
+```powershell
+cd "D:\remix-ghost-trace-orchestrate"
+```
+
+Replace this path if the project is stored elsewhere.
+
+### Step 2: Inspect the Project Files
+
+```powershell
+Get-ChildItem
+Get-ChildItem .\code -Recurse -File
+```
+
+Confirm that the Python entry point exists:
+
+```powershell
+Test-Path .\code\main.py
+```
+
+If the script depends on the original dataset, verify that the expected dataset directory and files are also available.
+
+### Step 3: Review the Challenge Instructions
+
+Read the following files before executing the solution:
+
+```text
+AGENTS.md
+agent_trace_instructions.md
+problem_statement.md
+```
+
+These documents may define additional requirements for evidence interpretation, execution, evaluation, or submission.
+
+### Step 4: Restore Required Input Data
+
+If the dataset is missing from the current working directory, restore it from the original project copy or the authorized source.
+
+Do not create placeholder evidence or fabricate dataset records to make the script run.
+
+## 10. Running the Python Processor
+
+From the project root, run:
+
+```powershell
+python .\code\main.py
+```
+
+If the script expects a different working directory, configuration, or dataset path, follow the implementation and repository instructions.
+
+Check whether the output exists:
+
+```powershell
+Test-Path .\output.csv
+```
+
+Inspect the first few lines:
+
+```powershell
+Get-Content .\output.csv -TotalCount 5
+```
+
+The expected successful behavior is for the processor to write results to the configured output location. The existence of the file alone does not establish correctness; validate the contents before submission.
+
+## 11. Running the Frontend and Backend
+
+The frontend and backend are separate from the Python CSV-generation task unless the project explicitly integrates them.
+
+### Frontend Setup
+
+From the project root, install dependencies if needed:
+
+```powershell
+npm install
+```
+
+Inspect the configured scripts:
+
+```powershell
+Get-Content .\package.json
+```
+
+If the project defines a `dev` script, start it using:
+
+```powershell
+npm run dev
+```
+
+Open the local URL printed by the development server.
+
+### Backend Setup
+
+Inspect the `backend/` directory and its setup instructions before starting the API.
+
+If the backend is Python-based and contains a requirements file, create and activate a virtual environment:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Install dependencies from the requirements file that actually exists in the repository.
+
+If the backend exposes a health endpoint, test the endpoint documented by the application. Do not assume `/health` is implemented unless the source confirms it.
+
+## 12. Testing and Validation
+
+Testing should cover both the structure of the generated file and the correctness of the case-level assessments.
+
+### Run the Test Suite
+
+If the repository contains Python tests and `pytest` is installed, run:
+
+```powershell
+python -m pytest
+```
+
+Install missing dependencies using the repository's documented setup.
+
+A passing test suite is useful evidence of correctness, but it does not independently prove that every deletion decision is accurate.
+
+### Validate the CSV
+
+Run the following PowerShell command from the project root. It checks the required columns, row count, permitted statuses, JSON syntax, uniqueness, and ordering.
+
+```powershell
+@'
+import csv
+import json
+from pathlib import Path
+
+path = Path("output.csv")
+expected_columns = ["case_id", "deletion_status", "steps_json"]
+allowed_statuses = {"COMPLETE", "INCOMPLETE", "NOT_APPLICABLE"}
+
+if not path.is_file():
+    raise SystemExit("ERROR: output.csv was not found.")
+
+with path.open("r", encoding="utf-8-sig", newline="") as f:
+    reader = csv.DictReader(f)
+
+    if reader.fieldnames != expected_columns:
+        raise SystemExit(
+            f"ERROR: Expected columns {expected_columns}; "
+            f"found {reader.fieldnames}"
+        )
+
+    rows = list(reader)
+
+errors = []
+
+if len(rows) != 518:
+    errors.append(f"Expected 518 data rows; found {len(rows)}")
+
+case_ids = [row["case_id"] for row in rows]
+
+if any(not case_id for case_id in case_ids):
+    errors.append("One or more rows have an empty case_id")
+
+if len(case_ids) != len(set(case_ids)):
+    errors.append("Duplicate case_id values were found")
+
+if case_ids != sorted(case_ids):
+    errors.append("Rows are not sorted by case_id")
+
+for line_number, row in enumerate(rows, start=2):
+    if row["deletion_status"] not in allowed_statuses:
+        errors.append(
+            f"Line {line_number}: invalid status "
+            f"{row['deletion_status']!r}"
+        )
+
+    try:
+        steps = json.loads(row["steps_json"])
+        if not isinstance(steps, list):
+            errors.append(
+                f"Line {line_number}: steps_json is not a JSON array"
+            )
+    except (TypeError, json.JSONDecodeError) as exc:
+        errors.append(
+            f"Line {line_number}: invalid steps_json: {exc}"
+        )
+
+if errors:
+    print("VALIDATION FAILED")
+    for error in errors:
+        print("-", error)
+    raise SystemExit(1)
+
+print("VALIDATION PASSED")
+print(f"Rows checked: {len(rows)}")
+print("CSV schema, statuses, JSON arrays, uniqueness, and ordering passed.")
+'@ | python -
+```
+
+This validation assumes that the dataset contains 518 cases and that lexicographic ordering by `case_id` is required. Follow the official challenge specification if it defines different requirements.
+
+### Review the Results
+
+In addition to structural validation:
+
+- Compare sample cases against supplied expected outputs or official tests.
+- Check that each case has relevant evidence or a clear explanation of missing evidence.
+- Review `COMPLETE` classifications carefully.
+- Confirm that the status agrees with the associated JSON steps.
+- Investigate unexpected empty step arrays.
+- Ensure that the output does not claim unsupported deletion verification.
+
+## 13. Evaluation Reports
+
+The submission instructions require the following documentation files:
 
 ```text
 code/evaluation/evaluation_report.md
 code/evaluation/usage_report.md
 ```
 
-- `evaluation_report.md` must cover case, row, field, and sequence accuracy, at least three additional evaluation cases created by you, failures found, and improvements made.
-- `usage_report.md` must cover the final full-dataset run, including model providers and names, model calls, input and output tokens, total and average tokens per request, and estimated total and per-request cost. Include per-model and overall totals when using multiple models.
+### Evaluation Report
 
-**Important:** Place `evaluation_report.md` and `usage_report.md` inside `code/evaluation/` (matching `code/evaluation/main.py` in this starter layout), write your complete evaluation metrics, custom evaluation test cases, and token/cost breakdowns directly inside those Markdown files, and keep prompts in source code or Markdown files. Automated code evaluation ignores raw data files (`.csv`, `.tsv`, `.json`, `.jsonl`, `.sql`, `.log`), so content stored only in those formats will not be visible to the code judge or AI interviewer.
+The `evaluation_report.md` file should document:
 
----
+- Test commands and environment.
+- Number of input cases processed.
+- Structural validation results.
+- Test pass/fail counts.
+- Known mismatches and unresolved defects.
+- Evaluation limitations.
+- Whether results were checked against reference outputs.
 
-## Chat Transcript
+Record actual results. Do not claim that tests passed unless they were run successfully.
 
-This repository includes [`AGENTS.md`](./AGENTS.md), which instructs compatible AI coding tools to append conversation summaries to `log.txt` in the repository root:
+### Usage Report
 
-| Platform | Path |
-| --- | --- |
-| macOS / Linux | `<repo root>/log.txt` |
-| Windows | `<repo root>\log.txt` |
+The `usage_report.md` file should document:
 
-- Always launch your AI coding agent from the repository root (or explicitly ask it to read `./AGENTS.md` first) so every turn is logged to `log.txt` with the required `User Prompt`, `Agent Response Summary`, `Actions`, and `Context` sections.
-- Upload `log.txt` directly as your `chat_transcript` submission on HackerRank.
-- Do not include API keys, tokens, credentials, or secrets in prompts, code, configuration, or `log.txt`.
+- The command used to execute the processor.
+- Required runtime and dependencies.
+- Input data required.
+- Output files generated.
+- Configuration requirements.
+- Relevant execution limitations.
 
----
+Include execution time or resource measurements only if they were actually recorded.
 
-## Packaging `code.zip` and Submission
+## 14. Submission Packaging
 
-| Item | Description |
-| --- | --- |
-| `code.zip` | Runnable solution, prompts, configuration, `README.md`, and `evaluation/` reports |
-| `output.csv` | One answer row for each of the 518 requests in `dataset/deletion_requests.csv` |
-| `chat_transcript` | The root `log.txt` file generated by your coding agent |
-| AI interview | Live explanation of your architecture, approach, and evaluation |
+When required by the challenge, prepare the following artifacts separately:
 
-You may use any programming language, model, framework, or retrieval approach. Include clear setup and execution instructions in `README.md` inside `code.zip`.
+| Artifact | Purpose |
+|---|---|
+| `output.csv` | Generated deletion-status results for the input cases. |
+| `code.zip` | Runnable source code, required documentation, evaluation reports, and necessary configuration. |
+| `log.txt` | Authentic chat or agent transcript, submitted using the required transcript field. |
 
-To package `code.zip` from the repository root without bundling the dataset:
+Follow the official HackerRank upload fields and naming requirements.
 
-**macOS / Linux:**
+### Create the Code Archive
 
-```bash
-zip -r code.zip README.md code -x "*/__pycache__/*" "*/.venv/*" "*/venv/*" "*/node_modules/*" "*/.git/*" "*/.DS_Store"
-```
+First, confirm that the `code/` directory contains the required files, including both evaluation reports.
 
-**Windows (PowerShell):**
+If the root README and `code/` directory are sufficient for your solution, create the archive with:
 
 ```powershell
-Compress-Archive -Path README.md, code -DestinationPath code.zip -Force
+Compress-Archive -Path .\README.md, .\code -DestinationPath .\code.zip -Force
 ```
 
-When packaging `code.zip`:
+This command includes only the root README and the `code/` directory. If the runnable solution depends on `backend/`, `src/`, `server.ts`, or root-level configuration files, include the necessary files when permitted by the submission rules.
 
-- Keep your evaluation reports in `code/evaluation/` so they are bundled automatically with `code` (or add `evaluation` to the archive command above if you placed them in a top-level `evaluation/` directory).
-- Do **not** include `dataset/`, virtual environments (`.venv`, `venv`, `node_modules`), or build caches (`__pycache__`). On Windows, keep `.venv` at the repository root (outside `code/`) and remove any `code/__pycache__` folders before running `Compress-Archive`.
-- Do **not** include nested archives (`.zip`, `.tar`, `.gz`, `.tgz`, `.7z`, `.rar`) inside `code.zip` — submissions containing nested archive files will be rejected.
+Do not use this command blindly if the application requires additional files to run.
 
-Before submitting, confirm that:
+### Exclude Unnecessary Files
 
-- `output.csv` has the exact header `case_id,deletion_status,steps_json` and contains all 518 data rows sorted by `case_id`;
-- every `steps_json` value is a valid JSON array with consecutive step numbers starting at `1`;
-- findings cite valid evidence IDs, and `COMPLETE` verification steps cite evidence proving the current state;
-- proposed remediation and future verification steps use an empty `evidence_id` (`""`);
-- `code.zip` includes your runnable code, `README.md`, `code/evaluation/evaluation_report.md`, and `code/evaluation/usage_report.md`;
-- `log.txt` follows the `AGENTS.md` turn format and is uploaded to the `chat_transcript` slot; and
-- no API keys, credentials, real personal data, or sensitive configuration values are included.
-#   G h o s t - T r a c e - O r c h e s t r a t e  
- 
+Do not include the dataset, virtual environments, dependency installation directories, build caches, or nested ZIP archives when prohibited by the challenge instructions.
+
+Common examples include:
+
+```text
+dataset/
+.venv/
+venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+dist/
+build/
+code.zip
+```
+
+List the contents of the archive after creating it:
+
+```powershell
+tar -tf .\code.zip
+```
+
+Verify that the archive contains the intended source code and documentation and does not accidentally include the dataset or temporary files.
+
+### Transcript Integrity
+
+The `log.txt` file should contain the actual conversation or agent transcript required by the challenge. Do not reconstruct or invent messages and present them as an original transcript.
+
+## 15. Troubleshooting
+
+### `output.csv` Was Not Generated
+
+Check that:
+
+1. You ran the script from the expected directory.
+2. `code/main.py` exists.
+3. The dataset is present at the path expected by the script.
+4. Required Python dependencies are installed.
+5. The terminal shows no execution errors.
+
+### The Output Contains Fewer Than 518 Cases
+
+Check whether input files are missing, parsing failed, or the script filters records. Compare the processed case identifiers against the original input dataset.
+
+### `steps_json` Contains Invalid JSON
+
+Ensure JSON is serialized using a JSON encoder rather than assembled through string concatenation. Then ensure CSV quoting is handled by a CSV writer.
+
+### The Exported File Contains HTML Instead of CSV
+
+A file ending in `.csv` is not necessarily a valid CSV file.
+
+Inspect the first bytes or lines of the downloaded file. If it contains `<!DOCTYPE html>`, `<html>`, or an error page, the export flow may be downloading an HTML response instead of the actual CSV artifact.
+
+The export handler should retrieve the real CSV output and verify the response content type and content before starting the download.
+
+### Tests Fail
+
+Read the assertion message and determine whether the failure is caused by an implementation defect, a missing dependency, incorrect input paths, or a mismatch between actual output and expected results.
+
+Record unresolved failures in the evaluation report.
+
+### The ZIP File Is Incomplete
+
+List the archive contents and verify that all required runtime files, instructions, and evaluation reports are included.
+
+If the application depends on files outside `code/`, include the necessary files or restructure the submission according to the official requirements.
+
+## 16. Limitations
+
+The reliability of GhostTrace AI's classifications depends on the completeness, accuracy, and correlation quality of the available evidence.
+
+Potential limitations include:
+
+- Missing logs or records may prevent a conclusive decision.
+- A deletion event may show that an operation was attempted without proving that every copy was removed.
+- Identity ambiguity can lead to incorrect case-to-record matching.
+- Evidence from one subsystem may not cover every storage location.
+- Automated classification may require review when evidence conflicts or remains inconclusive.
+- Passing structural tests does not prove that every underlying deletion claim is true.
+
+The output should be interpreted as an evidence-based assessment of the supplied case data, not as an independent guarantee that every physical or logical copy of a record has been destroyed.
+
+## 17. Security and Data Handling
+
+Deletion evidence can contain personal identifiers, account references, event metadata, or other sensitive information.
+
+When handling project data:
+
+- Keep the supplied dataset within the authorized project environment.
+- Avoid placing personal information in public repositories or unnecessary logs.
+- Do not commit secrets, credentials, access tokens, or private environment-specific configuration.
+- Exclude prohibited input datasets from the submission archive.
+- Preserve evidence identifiers when required for traceability while avoiding unnecessary disclosure of sensitive content.
+- Follow the challenge's data-handling and submission rules.
+
+## 18. Future Improvements
+
+Potential improvements for GhostTrace AI include:
+
+- More explicit evidence-to-requirement mapping.
+- Stronger identity resolution with ambiguity handling.
+- Automated checks for replicas, caches, backups, and downstream systems where evidence is available.
+- More comprehensive comparisons against reference outputs.
+- Better diagnostics for missing or conflicting evidence.
+- Export validation to prevent HTML responses from being saved as CSV.
+- Automated packaging checks for required submission files.
+- Expanded evaluation coverage for edge cases and incomplete evidence.
+
+These are potential enhancements and should not be interpreted as existing capabilities unless they have been implemented and tested.
+
+## 19. Conclusion
+
+GhostTrace AI provides a structured approach to analyzing data deletion requests and their associated evidence under the challenge **Ghost Data Still Exists**.
+
+The project aims to make the distinction between verified completion, unresolved deletion, and non-applicable cases explicit through consistent status labels and machine-readable findings.
+
+A reliable submission should include a runnable implementation, a correctly formatted and validated `output.csv`, evaluation and usage reports, and the required authentic transcript. Every assessment should remain grounded in the evidence available for its case.
+
+---
+
+**Project Name:** GhostTrace AI  
+**Challenge:** Ghost Data Still Exists  
+**Primary Output:** `output.csv`  
+**Expected Case Count:** 518  
+**Permitted Statuses:** `COMPLETE`, `INCOMPLETE`, `NOT_APPLICABLE`
